@@ -1,0 +1,446 @@
+/* Buttons, fields, tables, banners, panels. Tokens only — no literal colours.
+   Retheme by editing css/tokens.css, never this file. */
+
+/* App-level tokens, composed from the palette in css/tokens.css rather than
+   restated as hex. Gears are tinted by which axial plane they sit in, so a
+   compound stack reads as a stack instead of as a pile of overlapping discs. */
+:root {
+  --plane-0: var(--panel-2);
+  --plane-1: var(--panel-3);
+  --plane-2: var(--accent-soft);
+}
+
+/* --- surfaces ---------------------------------------------------------- */
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-4);
+}
+
+/* Sections are <details>, so a long sidebar can be folded down to the parts
+   in use. The open state is remembered per tool. */
+.section { border-bottom: 1px solid var(--border); }
+.section:last-child { border-bottom: none; }
+
+.section__title {
+  display: flex; align-items: center; gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-faint);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.section__title::-webkit-details-marker { display: none; }
+.section__title::after {
+  content: '';
+  margin-left: auto;
+  width: 6px; height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg) translate(-1px, 1px);
+  transition: transform 0.12s ease;
+}
+.section[open] > .section__title::after { transform: rotate(45deg) translate(-1px, -1px); }
+.section__title:hover { color: var(--text-dim); background: var(--panel-2); }
+.section__title .info { margin-left: 0; }
+
+.section__body { padding: 0 var(--space-4) var(--space-4); }
+
+.muted { color: var(--text-faint); }
+.value { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.nowrap { white-space: nowrap; }
+
+/* --- buttons ----------------------------------------------------------- */
+
+.btn {
+  font: inherit;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  min-height: 32px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--panel-3); }
+.btn:focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 1px; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* --accent is ~2.3:1 on white: it fills and outlines, it never carries text.
+   Accent-coloured text uses --accent-strong. */
+.btn-primary {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: var(--accent-ink);
+}
+.btn-primary:hover { filter: brightness(1.08); background: var(--accent-strong); }
+.btn-sm { min-height: 26px; padding: 3px var(--space-2); font-size: 12px; }
+.btn-danger { color: var(--danger); border-color: var(--danger); background: var(--danger-soft); }
+
+.btn-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+/* --- tabs -------------------------------------------------------------- */
+
+.segmented {
+  display: flex; gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.segmented__btn {
+  flex: 1 1 0; min-width: 0;
+  font: inherit; font-weight: 600;
+  padding: 7px var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.segmented__btn:hover { background: var(--panel-3); }
+.segmented__btn[aria-selected="true"] {
+  background: var(--panel);
+  border-color: var(--border);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+/* --- fields ------------------------------------------------------------ */
+
+.field { margin-bottom: var(--space-3); }
+.field:last-child { margin-bottom: 0; }
+.field__label {
+  display: flex; align-items: center; gap: var(--space-2);
+  margin-bottom: var(--space-1);
+  font-size: 12px; font-weight: 600; color: var(--text-dim);
+}
+.field__hint { margin-top: var(--space-1); font-size: 11px; color: var(--text-faint); }
+
+.input, .select {
+  font: inherit; width: 100%;
+  padding: var(--space-2) var(--space-3);
+  min-height: 34px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--text);
+}
+.input { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.input:focus, .select:focus { outline: 2px solid var(--accent-strong); outline-offset: -1px; border-color: var(--accent-strong); }
+.input--invalid { border-color: var(--danger); background: var(--danger-soft); }
+
+.field-row { display: flex; gap: var(--space-2); }
+.field-row > * { flex: 1 1 0; min-width: 0; }
+
+.field--toggle { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; }
+.field__label--inline { margin: 0; }
+
+input[type="range"] { width: 100%; accent-color: var(--accent-strong); }
+
+/* --- chips ------------------------------------------------------------- */
+
+.chipset { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.chip {
+  font: inherit; font-size: 12px;
+  padding: 5px var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.chip:hover { background: var(--panel-2); }
+.chip[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent-strong);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+/* --- info icon --------------------------------------------------------- */
+
+.info {
+  flex: 0 0 auto;
+  width: 15px; height: 15px; padding: 0;
+  font: 700 10px/1 var(--font);
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  background: var(--panel-2);
+  color: var(--text-faint);
+  cursor: help;
+}
+.info:hover { border-color: var(--accent-strong); color: var(--accent-strong); }
+
+/* --- banners ----------------------------------------------------------- */
+
+.banners { display: flex; flex-direction: column; gap: var(--space-2); }
+.banner {
+  display: flex; align-items: flex-start; gap: var(--space-2);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid;
+  font-size: 13px;
+}
+.banner__mark { font-weight: 700; }
+.banner-ok     { color: var(--ok);     background: var(--ok-soft);     border-color: var(--ok); }
+.banner-warn   { color: var(--warn);   background: var(--warn-soft);   border-color: var(--warn); }
+.banner-danger { color: var(--danger); background: var(--danger-soft); border-color: var(--danger); }
+.banner-info   { color: var(--text-dim); background: var(--panel-2);   border-color: var(--border); }
+
+/* --- readouts ---------------------------------------------------------- */
+
+.readout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+}
+.stat {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+}
+.stat__label {
+  display: flex; align-items: center; gap: var(--space-2);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-faint);
+}
+.stat__value {
+  margin-top: var(--space-1);
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 20px; font-weight: 600; color: var(--text);
+  overflow-wrap: anywhere;
+}
+.stat__note { margin-top: 2px; font-size: 11px; color: var(--text-faint); }
+.stat--accent .stat__value { color: var(--accent-strong); }
+
+/* An editable headline number: the input speed lives here as well as in the
+   sidebar, because it is the one value people reach for constantly. */
+.stat--editable { border-color: var(--accent-strong); }
+.stat__field { display: flex; align-items: baseline; gap: var(--space-2); margin-top: var(--space-1); }
+.stat__input {
+  flex: 1 1 auto; min-width: 0;
+  padding: 2px var(--space-2);
+  min-height: 30px;
+  font-size: 19px; font-weight: 600;
+  background: var(--panel-2);
+}
+.stat__unit { flex: 0 0 auto; font-size: 12px; color: var(--text-faint); }
+
+/* --- tables ------------------------------------------------------------ */
+
+.table-wrap { overflow-x: auto; }
+.table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.table th, .table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+.table th {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-faint);
+}
+.table td.num, .table th.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.table tbody tr:hover { background: var(--panel-2); }
+.table tbody tr[aria-selected="true"] { background: var(--accent-soft); }
+.table tbody tr.is-clickable { cursor: pointer; }
+
+/* --- the gear list ----------------------------------------------------- */
+
+.node-list { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.node-group {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  overflow: hidden;
+}
+/* The class is set by JS rather than relying on :has, so the selection is
+   still visible in a browser that does not support it. */
+.node-group.is-selected {
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 1px var(--accent-strong) inset;
+}
+
+.node {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--text);
+  width: 100%;
+}
+.node:hover { background: var(--panel-2); }
+.node__swatch { flex: 0 0 auto; width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--border-strong); }
+.node__name {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; flex-direction: column; gap: 1px;
+  overflow: hidden;
+  font-weight: 600;
+}
+.node__name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.node__from { font-size: 11px; font-weight: 400; color: var(--text-faint); }
+.node__meta { flex: 0 0 auto; font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); }
+
+/* One row per shaft: what it is doing, and the two things you can do to it. */
+.shaft-row {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border);
+  background: var(--panel-2);
+}
+.node-members .shaft-row:first-child { border-top: 1px solid var(--border); }
+.shaft-row__name {
+  flex: 0 0 auto;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text-faint);
+  min-width: 52px;
+}
+.shaft-row__speed {
+  flex: 1 1 auto; min-width: 0;
+  font-size: 12px; color: var(--text-dim);
+  text-align: right;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.shaft-row .btn { flex: 0 0 auto; }
+.shaft-row .btn[aria-pressed="true"] {
+  background: var(--ok-soft); border-color: var(--ok); color: var(--ok); font-weight: 600;
+}
+.shaft-row .btn[data-field^="hold"][aria-pressed="true"] {
+  background: var(--warn-soft); border-color: var(--warn); color: var(--warn);
+}
+
+.tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text-faint);
+}
+.tag--drive { color: var(--ok); border-color: var(--ok); background: var(--ok-soft); }
+.tag--ground { color: var(--warn); border-color: var(--warn); background: var(--warn-soft); }
+
+/* --- stage furniture --------------------------------------------------- */
+
+.stage-tools {
+  display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
+.stage-tools__spacer { flex: 1 1 auto; }
+
+.legend { display: flex; flex-wrap: wrap; gap: var(--space-3); font-size: 11px; color: var(--text-faint); }
+.legend__item { display: flex; align-items: center; gap: var(--space-1); }
+.legend__key { width: 14px; height: 3px; border-radius: 2px; background: var(--accent); }
+
+/* --- the teaching panel ------------------------------------------------ */
+
+.explain-host { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.explain {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  padding: 0;
+}
+.explain > summary {
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+  display: flex; align-items: center; gap: var(--space-2);
+}
+.explain > summary::-webkit-details-marker { display: none; }
+.explain > summary::before {
+  content: '▸';
+  color: var(--text-faint);
+  transition: transform 0.15s ease;
+}
+.explain[open] > summary::before { content: '▾'; }
+.explain__body { padding: 0 var(--space-4) var(--space-4); }
+.explain__body p { margin: 0 0 var(--space-3); max-width: 68ch; }
+.explain__body p:last-child { margin-bottom: 0; }
+
+.explain__formula, .explain__worked {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  font-family: var(--font-mono); font-size: 12.5px; line-height: 1.7;
+  overflow-x: auto;
+  white-space: pre;
+}
+.explain__worked { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
+.explain__caption {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 0 0 var(--space-1);
+}
+
+/* --- toast ------------------------------------------------------------- */
+
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  z-index: 400;
+  padding: var(--space-2) var(--space-4);
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--bg);
+  box-shadow: var(--shadow-lg);
+  font-size: 13px;
+}
+
+/* --- modal ------------------------------------------------------------- */
+
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 350;
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-4);
+  background: rgb(0 0 0 / 45%);
+}
+.modal {
+  width: min(560px, 100%);
+  max-height: min(80vh, 640px);
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-5);
+}
+.modal__title { margin: 0 0 var(--space-3); font-size: 16px; }
+.modal__row { display: flex; gap: var(--space-2); margin-top: var(--space-4); }
+
+/* Derived dimensions: what the typed numbers actually produced. */
+.dims {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px var(--space-3);
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+}
+.dims dt { color: var(--text-faint); }
+.dims dd { margin: 0; text-align: right; color: var(--text); }
+
+.node__meta { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; line-height: 1.25; }
+.node__dia { font-size: 11px; opacity: 0.8; }

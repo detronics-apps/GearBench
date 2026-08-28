@@ -1,0 +1,7 @@
+node_modules/
+.DS_Store
+Thumbs.db
+
+# Scratch material, not part of the app. Logo.png and "Color Palette.png" are
+# already in the repo root, where the house style keeps them.
+reference/

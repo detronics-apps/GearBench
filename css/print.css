@@ -1,0 +1,53 @@
+/* The printable sheet: the drawing, the numbers, and the working — nothing
+   that only makes sense on a screen. */
+@media print {
+  .app-header,
+  .sidebar,
+  .segmented,
+  .stage-tools,
+  .btn,
+  .info,
+  .info__bubble,
+  .toast,
+  .modal-backdrop { display: none !important; }
+
+  html, body { height: auto; background: #fff; color: #000; }
+  body { display: block; }
+
+  .app-main { display: block; }
+  .viewport { display: block; padding: 0; overflow: visible; }
+  .viewport__stage {
+    border: none;
+    padding: 0;
+    background: #fff;
+    break-inside: avoid;
+    min-height: 0;
+  }
+  .viewport__stage svg { max-width: 100% !important; }
+
+  .readout {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6mm;
+    margin-top: 6mm;
+    break-inside: avoid;
+  }
+  .stat, .panel, .explain { border-color: #999; box-shadow: none; }
+
+  /* The teaching panel is the point of the sheet, so it prints open. */
+  .explain { break-inside: avoid; }
+  .explain > .explain__body { display: block !important; }
+  .explain > summary { font-weight: 700; }
+  .explain__formula, .explain__worked { background: #f4f4f4; border-color: #999; }
+
+  .table th, .table td { border-color: #999; }
+  .banner { border-color: #999; background: #fff; color: #000; }
+
+  .app-footer {
+    border-top: 1px solid #999;
+    color: #444;
+    margin-top: 6mm;
+  }
+
+  @page { margin: 12mm; }
+}

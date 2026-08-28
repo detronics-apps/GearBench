@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "gear-bench",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8845"],
+      "port": 8845
+    }
+  ]
+}
