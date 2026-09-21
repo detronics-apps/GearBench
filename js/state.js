@@ -20,7 +20,7 @@ import { createTrain, migrateTrain } from './train.js';
 const KEY = 'gear-bench';
 export const STATE_VERSION = 2;
 
-export const TOOLS = ['train', 'planetary', 'gear', 'ratio'];
+export const TOOLS = ['train', 'planetary', 'gear', 'ratio', 'guide'];
 
 export const defaults = () => ({
   version: STATE_VERSION,
@@ -76,7 +76,9 @@ export const defaults = () => ({
 
   // Which sidebar panels are open, keyed `tool:section`. Chrome, not design —
   // but it has to survive a re-render or every edit would spring them all open.
-  ui: { sections: {} },
+  // `level` is Simple / Advanced / Expert — it only ever hides controls, never
+  // changes a value, so switching down and back leaves every number alone.
+  ui: { sections: {}, level: 'simple', guideQuery: '', guideCategory: 'all' },
 });
 
 export const state = defaults();
@@ -142,7 +144,13 @@ export function migrate(incoming) {
       speed: Math.max(0.05, Math.min(8, number(incoming.view?.speed, base.view.speed))),
     },
 
-    ui: { sections: sectionFlags(incoming.ui?.sections) },
+    ui: {
+      sections: sectionFlags(incoming.ui?.sections),
+      level: oneOf(incoming.ui?.level, ['simple', 'advanced', 'expert'], base.ui.level),
+      guideQuery: String(incoming.ui?.guideQuery ?? base.ui.guideQuery).slice(0, 80),
+      guideCategory: typeof incoming.ui?.guideCategory === 'string'
+        ? incoming.ui.guideCategory : base.ui.guideCategory,
+    },
   };
 }
 

@@ -106,7 +106,7 @@ export function render(ctx) {
         min: 2, max: 6, step: 1, integer: true,
         hint: 'More planets share the load, but far fewer tooth counts will assemble.',
       }) : null,
-    ], { key: 'target' }),
+    ], { key: 'target', group: 'ratio' }),
 
     section(`Candidates (${results.length})`, [
       resultsTable(r.mode, results, (row) => {
@@ -119,7 +119,7 @@ export function render(ctx) {
           toast(`Loaded ${describe(draft.ratio.mode, row._result)} into the train designer`);
         });
       }),
-    ], { key: 'candidates', info: 'Closest first; between equal errors, the one with fewer teeth. Click a row to open it in the train designer.' }),
+    ], { key: 'candidates', group: 'ratio', info: 'Closest first; between equal errors, the one with fewer teeth. Click a row to open it in the train designer.' }),
 
     chosen ? section('Use it', [
       buttonRow([
@@ -129,7 +129,7 @@ export function render(ctx) {
           draft.tool = 'train';
         }), { primary: true, small: true }),
       ]),
-    ], { key: 'use' }) : null,
+    ], { key: 'use', group: 'ratio' }) : null,
   );
 
   /* -- teaching -------------------------------------------------------- */

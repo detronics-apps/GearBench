@@ -189,7 +189,77 @@ input[type="range"] { width: 100%; accent-color: var(--accent-strong); }
   border: 1px solid;
   font-size: 13px;
 }
-.banner__mark { font-weight: 700; }
+.banner__mark { font-weight: 700; flex: 0 0 auto; }
+/* The text takes the room so the close button is pushed to the right edge. */
+.banner__text { flex: 1 1 auto; min-width: 0; }
+
+/* Every notification closes. One that cannot be got rid of stops being
+   information and becomes furniture. */
+.banner__x, .notices__x {
+  flex: 0 0 auto;
+  border: none;
+  background: none;
+  padding: 0 2px;
+  margin: -2px 0 0;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  color: inherit;
+  opacity: 0.65;
+  cursor: pointer;
+}
+.banner__x:hover, .notices__x:hover { opacity: 1; }
+.banner__x:focus-visible, .notices__x:focus-visible {
+  outline: 2px solid currentColor; outline-offset: 1px; opacity: 1;
+}
+
+/* --- More than one notification folds into a group --------------------- *
+ * Several stacked banners push the actual work off the screen, and the reader
+ * wants either all of them or none. */
+
+.notices {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  overflow: hidden;
+}
+.notices--error { border-color: var(--danger); }
+.notices--warn  { border-color: var(--warn); }
+
+.notices__summary {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: 13px;
+  color: var(--text-dim);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.notices__summary::-webkit-details-marker { display: none; }
+.notices__summary::before { content: "▸"; color: var(--text-faint); }
+.notices[open] .notices__summary::before { content: "▾"; }
+.notices__summary:hover { background: var(--panel-3); }
+.notices__label { font-weight: 600; }
+.notices__count { color: var(--text-faint); font-size: 12px; }
+
+.notices__list { display: flex; flex-direction: column; border-top: 1px solid var(--border); }
+.notices__item {
+  display: flex; align-items: flex-start; gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  background: var(--panel);
+}
+.notices__item + .notices__item { border-top: 1px solid var(--border); }
+.notices__dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  margin-top: 5px; flex: 0 0 auto;
+  background: var(--text-faint);
+}
+.notices__item--error .notices__dot { background: var(--danger); }
+.notices__item--warn  .notices__dot { background: var(--warn); }
+.notices__item--ok    .notices__dot { background: var(--ok); }
+.notices__text { flex: 1 1 auto; min-width: 0; line-height: 1.5; }
 .banner-ok     { color: var(--ok);     background: var(--ok-soft);     border-color: var(--ok); }
 .banner-warn   { color: var(--warn);   background: var(--warn-soft);   border-color: var(--warn); }
 .banner-danger { color: var(--danger); background: var(--danger-soft); border-color: var(--danger); }
@@ -444,3 +514,127 @@ input[type="range"] { width: 100%; accent-color: var(--accent-strong); }
 
 .node__meta { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; line-height: 1.25; }
 .node__dia { font-size: 11px; opacity: 0.8; }
+
+/* --- Round icon buttons (theme, coffee, any future chrome icon) --------- */
+
+.btn { text-decoration: none; }          /* two of these are anchors */
+
+.btn-icon {
+  width: 32px; height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 15px; line-height: 1;
+}
+.btn-icon svg { display: block; }
+
+.brand__home { display: inline-flex; align-items: center; text-decoration: none; }
+
+.linkish {
+  color: var(--accent-strong);
+  text-decoration: none;
+  font-size: 12px;
+}
+.linkish:hover { text-decoration: underline; }
+
+/* --- The workspace bar: what you are on, and how much of it to show ----- *
+ * The detail level governs every panel below it, so it lives above them all,
+ * beside the tabs — not inside a panel, where it would read as a setting for
+ * that panel. */
+
+.workspace-bar { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.workspace-bar .segmented { flex: 1 1 300px; min-width: 0; }
+.workspace-bar__levels { flex: 0 0 auto; }
+
+.chipset--modes .chip { font-size: 12px; padding: 4px var(--space-2); }
+
+/* A rule blocking the tab bar into groups of tabs that work together. */
+.segmented__sep {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: 1px;
+  margin: 3px 4px;
+  background: var(--border);
+}
+
+@media (max-width: 620px) {
+  .workspace-bar { gap: var(--space-2); }
+  .workspace-bar__levels { flex: 1 1 auto; }
+  .chipset--modes { justify-content: stretch; }
+  .chipset--modes .chip { flex: 1 1 0; }
+}
+
+/* --- Section headings sit on a band, so the hierarchy is visible -------- */
+
+.section__title { background: var(--panel-2); }
+.section[open] > .section__title { border-bottom: 1px solid var(--border); }
+
+/* --- The guide ---------------------------------------------------------- */
+
+.viewport__stage--text {
+  display: block;
+  align-items: stretch;
+  justify-content: flex-start;
+  overflow-x: visible;
+  padding: var(--space-5);
+}
+.viewport__stage--text > * { width: 100%; max-width: 760px; margin: 0 auto; }
+
+.guide__searchbar { display: flex; gap: var(--space-2); align-items: center; }
+.guide__search { flex: 1 1 auto; min-width: 0; }
+
+.guide__heading {
+  display: flex; align-items: baseline; gap: var(--space-2);
+  margin: var(--space-5) 0 var(--space-3);
+  font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text-dim);
+}
+.guide__count {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--text-faint);
+}
+
+.guide__list {
+  display: flex; flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.guide__item { border-bottom: 1px solid var(--border); }
+.guide__item:last-child { border-bottom: none; }
+.guide__item .section__title { gap: var(--space-3); text-transform: none; font-size: 13px; }
+.guide__cat {
+  flex: 0 0 auto;
+  font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--accent-strong);
+  min-width: 86px;
+}
+
+.howto-steps { margin: 0; padding-left: var(--space-5); }
+.howto-steps li { margin-bottom: var(--space-2); line-height: 1.55; }
+.howto-steps li:last-child { margin-bottom: 0; }
+.faq__a { margin: 0; line-height: 1.6; color: var(--text-dim); }
+
+.guide__features {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-3);
+}
+.feature {
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+.feature__name { font-weight: 600; margin-bottom: 2px; }
+.feature__where {
+  font-size: 11px; color: var(--accent-strong);
+  margin-bottom: var(--space-2);
+}
+.feature__what { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+
+@media (max-width: 700px) {
+  .viewport__stage--text { padding: var(--space-4) var(--space-3); }
+  .guide__cat { min-width: 0; }
+  .guide__item .section__title { flex-wrap: wrap; }
+}

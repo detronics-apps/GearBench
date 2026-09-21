@@ -1,5 +1,81 @@
 # Changelog
 
+## 1.6.0
+
+**Every notification closes now**, including the green "this train will run as
+drawn". A message you cannot get rid of stops being information and becomes
+furniture — you stop reading it, and then you stop reading the one underneath it
+that mattered. The × sits at the right-hand end, as it does in 3DPrintCost.
+
+**More than one folds into a group.** From two upwards they collapse into a
+single "Notifications" line you can open or shut, so you get all of them or none
+rather than a stack pushing the drawing off the screen. Worst level first, the
+group's border takes the worst level inside it, and the summary counts what is
+in there — "3 — 1 problem, 2 to check" — re-tallying as rows are closed. When the
+last row goes, the group goes with it. It opens by default, because nothing
+should hide an error on first sight, and stays shut once you shut it.
+
+Dismissal is keyed on **what the message says**, not on the element or its
+position, because these messages are recomputed from the model on every render —
+a flag on the node dies with it. That gives the behaviour you would expect for
+free: acknowledge a warning and it stays gone; change the design so it now says
+something different and it speaks up again. Kept in memory rather than saved: a
+dismissal is "I have read this", not a setting, and a problem that survives a
+reload has earned the right to say so once more.
+
+## 1.5.0
+
+Matched to the 3DPrintCost Bench, which is the reference for this chrome.
+
+- **The Simple / Advanced / Expert switch moved to a workspace bar** — one row
+  above the drawing, tabs on the left and the three chips on the right, exactly
+  where 3DPrintCost puts them. It governs every panel on the screen, so it
+  belongs above them all; inside a sidebar section it read as a setting for that
+  section. At phone widths the row wraps and the chips go full width.
+- **Tabs are ordered as the story runs**: gear train → single gear → planetary
+  set → ratio solver. Build something, then design a part for it, then the one
+  arrangement that needs its own tool, then work backwards from a number. A rule
+  (`segmented__sep`) fences "How to use" off from the working tabs, because it is
+  about the app rather than part of the job.
+- **The app opens on its own simplest example.** Gear train tab, Simple level,
+  one pinion driving one wheel at a round 3:1 — and the "Simple train" chip reads
+  as already selected, because the default *is* that preset rather than something
+  resembling it. A preset chip stays pressed only while the bench still equals
+  it; edit anything and none is pressed, which is the honest state.
+
+  The first pass used a 12-tooth pinion, which undercuts at 20° and opened the
+  app on a warning. 18 teeth gives the same 3:1 and nothing to explain away.
+  There is now a test that the default bench raises no problems at all.
+
+## 1.4.0
+
+The house features from the `detronics-app` skill that this app did not have yet.
+
+- **Chrome links.** The logo is now the home link to detronics.co.za, a round
+  Buy Me a Coffee button sits left of the theme toggle, and a "Buy me a coffee"
+  link joins the footer. The coffee icon is a line-drawn SVG in `currentColor`,
+  not the emoji — an emoji carries its own colours and clashes with the palette
+  in one theme or both. The theme control is now a round icon button too, with
+  the state-bearing glyph the icon system asks for.
+- **Simple / Advanced / Expert.** A switch at the top of the panel, defaulting
+  to Simple and remembered between visits. It only ever *hides*: the arithmetic
+  is identical at every level, and moving between them never changes a number.
+  Simple is teeth, connections and a speed; Advanced adds positions, centre
+  distances, view and export; Expert adds profile shift, module overrides and
+  the pressure angle.
+- **Sections are an accordion.** Opening one closes its siblings, so a single
+  thing is in view at a time — the native `<details name>` behaviour, so the
+  browser does the closing and no bookkeeping of ours can drift.
+- **A "How to use" tab**, last after the working tabs: one search box over
+  nine how-tos, eight questions and nine feature notes at once. It searches in
+  the user's words rather than the app's — "laser", "backwards", "make it
+  slower" all find the right page — via an alias map in `js/guide.js` that is
+  the translator between the two vocabularies.
+
+Also fixed: a tool passing `null` to `sidebar.append()` for a section that does
+not apply put the literal word "null" in the panel, because native `append()`
+stringifies it. Filtered once in the shell rather than at every call site.
+
 ## 1.3.0
 
 **Coaxial labels no longer land on top of each other.** The sun, ring and

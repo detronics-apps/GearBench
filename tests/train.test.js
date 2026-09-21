@@ -52,7 +52,9 @@ test('a belt keeps direction; a shaft keeps speed', () => {
 });
 
 test('an idler changes the direction and nothing else', () => {
-  const withIdler = solveTrain(createTrain());        // 18 → 30 → 54
+  // The default bench is a single pair now, so the idler arrangement is the
+  // preset named after it.
+  const withIdler = solveTrain(PRESETS.idler.build());        // 18 → 30 → 54
   const direct = solveTrain(pair(18, 54));
   const asFraction = (r, out, input) => speed(r, out) / speed(r, input);
   assert.ok(close(Math.abs(asFraction(withIdler, 'g3', 'g1')), Math.abs(asFraction(direct, 'g2', 'g1'))),
@@ -169,11 +171,11 @@ test('ratioBetween works between any two shafts', () => {
 });
 
 test('adding, editing and removing gears', () => {
-  let model = createTrain();
-  const { model: bigger, id } = addGear(model, 'g3', 'mesh', { z: 24 });
-  assert.equal(bigger.nodes.length, 4);
+  let model = createTrain();                       // a pair: g1 → g2
+  const { model: bigger, id } = addGear(model, 'g2', 'mesh', { z: 24 });
+  assert.equal(bigger.nodes.length, 3);
   assert.equal(nodeById(bigger, id).z, 24);
-  assert.deepEqual(childrenOf(bigger, 'g3').map((n) => n.id), [id]);
+  assert.deepEqual(childrenOf(bigger, 'g2').map((n) => n.id), [id]);
 
   model = updateNode(bigger, id, { z: 30, name: 'Output' });
   assert.equal(nodeById(model, id).z, 30);
@@ -182,7 +184,7 @@ test('adding, editing and removing gears', () => {
   const deeper = addGear(model, id, 'mesh', { z: 18 });
   assert.equal(subtree(deeper.model, id).length, 2);
   const pruned = removeNode(setDrive(deeper.model, deeper.id, 500), id);
-  assert.equal(pruned.nodes.length, 3);
+  assert.equal(pruned.nodes.length, 2);
   assert.equal(pruned.drives[deeper.id], undefined);
 });
 
@@ -192,15 +194,15 @@ test('the root gear cannot be removed', () => {
 });
 
 test('driving a shaft clears its ground, and grounding it clears its drive', () => {
-  let model = toggleGround(createTrain(), 'g3');
-  assert.deepEqual(model.grounds, ['g3']);
-  model = setDrive(model, 'g3', 200);
+  let model = toggleGround(createTrain(), 'g2');
+  assert.deepEqual(model.grounds, ['g2']);
+  model = setDrive(model, 'g2', 200);
   assert.deepEqual(model.grounds, []);
-  assert.equal(model.drives.g3, 200);
-  model = toggleGround(model, 'g3');
-  assert.equal(model.drives.g3, undefined);
-  model = setDrive(model, 'g3', '');
-  assert.equal(model.drives.g3, undefined);
+  assert.equal(model.drives.g2, 200);
+  model = toggleGround(model, 'g2');
+  assert.equal(model.drives.g2, undefined);
+  model = setDrive(model, 'g2', '');
+  assert.equal(model.drives.g2, undefined);
 });
 
 test('edits never mutate the model they were given', () => {
@@ -397,4 +399,15 @@ test('setSoleDrive releases a shaft it takes over from the casing', () => {
   const driven = setSoleDrive(model, 'g4');
   assert.deepEqual(driven.grounds, []);
   assert.equal(solveTrain(driven).status, 'unique');
+});
+
+test('the app opens on a sound, complaint-free bench', () => {
+  // The first screen is a worked example, not a problem to solve: the default
+  // bench must have nothing to warn about, and must be the preset the "Simple
+  // train" chip selects, so that chip reads as already chosen.
+  const result = solveTrain(createTrain());
+  assert.equal(result.status, 'unique');
+  assert.deepEqual(result.problems, [], 'the default bench raises nothing');
+  assert.deepEqual(PRESETS.simple.build(), createTrain(), 'default === Simple train');
+  assert.equal(createTrain().nodes.length, 2, 'the simplest thing that is still a train');
 });

@@ -73,19 +73,29 @@ export const PLANET_ATTACH = {
 
 /* ---------------------------------------------------------------- model -- */
 
+/**
+ * The bench a first-time user opens onto.
+ *
+ * Deliberately the simplest thing that is still a gear train: one pinion, one
+ * wheel, one mesh, a round 3:1. Everything the app can do is reachable from it,
+ * and nothing has to be deleted first. A newcomer's first screen should be a
+ * worked example, not an empty canvas — and not a three-gear arrangement whose
+ * middle gear raises a question before they have asked one.
+ */
 export function createTrain() {
   return {
     version: MODEL_VERSION,
     defaults: { m: 2, alphaDeg: 20 },
     nodes: [
-      { id: 'g1', kind: 'gear', name: 'Input', z: 18, parent: null, link: null, angle: 0 },
-      { id: 'g2', kind: 'gear', name: 'Idler', z: 30, parent: 'g1', link: 'mesh', angle: 0 },
-      { id: 'g3', kind: 'gear', name: 'Output', z: 54, parent: 'g2', link: 'mesh', angle: 0 },
+      // 18 teeth, not 12: below about 17 a 20° gear undercuts, and the first
+      // screen anyone sees must not open on a complaint.
+      { id: 'g1', kind: 'gear', name: 'Pinion', z: 18, parent: null, link: null, angle: 0 },
+      { id: 'g2', kind: 'gear', name: 'Wheel', z: 54, parent: 'g1', link: 'mesh', angle: 0 },
     ],
     drives: { g1: DEFAULT_RPM },
     grounds: [],
     inputTorque: 5,
-    nextId: 4,
+    nextId: 3,
   };
 }
 
@@ -678,20 +688,22 @@ export const PRESETS = {
   simple: {
     label: 'Simple train',
     hint: 'One mesh. The classic 3:1 reduction.',
-    build: () => ({
-      ...createTrain(),
-      nodes: [
-        { id: 'g1', kind: 'gear', name: 'Pinion', z: 18, parent: null, link: null, angle: 0 },
-        { id: 'g2', kind: 'gear', name: 'Wheel', z: 54, parent: 'g1', link: 'mesh', angle: 0 },
-      ],
-      drives: { g1: DEFAULT_RPM },
-      nextId: 3,
-    }),
+    // This *is* the default bench, so the app opens on the preset a newcomer
+    // would have picked anyway, and "Simple train" reads as already selected.
+    build: () => createTrain(),
   },
   idler: {
     label: 'Idler',
     hint: 'The middle gear changes the direction and nothing else.',
-    build: () => createTrain(),
+    build: () => ({
+      ...createTrain(),
+      nodes: [
+        { id: 'g1', kind: 'gear', name: 'Input', z: 18, parent: null, link: null, angle: 0 },
+        { id: 'g2', kind: 'gear', name: 'Idler', z: 30, parent: 'g1', link: 'mesh', angle: 0 },
+        { id: 'g3', kind: 'gear', name: 'Output', z: 54, parent: 'g2', link: 'mesh', angle: 0 },
+      ],
+      nextId: 4,
+    }),
   },
   compound: {
     label: 'Compound train',

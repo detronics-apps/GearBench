@@ -11,19 +11,29 @@
 import { load, save, saveSoon, state, reset } from './state.js';
 import { el, clear, toast, hideTooltip } from './ui/dom.js';
 import { capDiagramScale, dualLabel } from './ui/patterns.js';
-import { configureSections } from './ui/widgets.js';
+import { configureSections, levelSwitch } from './ui/widgets.js';
 import { copyLink, saveProject, openProject, printSheet } from './ui/export.js';
 
 import * as trainTool from './ui/tools/train.js';
 import * as planetaryTool from './ui/tools/planetary.js';
 import * as gearTool from './ui/tools/gear.js';
 import * as ratioTool from './ui/tools/ratio.js';
+import * as guideTool from './ui/tools/guide.js';
 
 /** Bumped on every release. Read it before debugging anything: a stale cache
  *  serving yesterday's build has cost more time here than any actual bug. */
-export const APP_VERSION = '1.3.0';
+export const APP_VERSION = '1.6.0';
 
-const TOOLS = [trainTool, planetaryTool, gearTool, ratioTool];
+/*
+ * Tab order tells the story: build a train, then design a gear for it, then the
+ * one arrangement that needs its own tool, then work backwards from a ratio.
+ * The guide is last, and separated, because it is about the app rather than
+ * part of the job.
+ */
+const TOOLS = [trainTool, gearTool, planetaryTool, ratioTool, guideTool];
+
+/** A rule is drawn before these tabs, blocking the bar into groups. */
+const TAB_GROUP_BREAK = new Set(['guide']);
 const byId = Object.fromEntries(TOOLS.map((tool) => [tool.meta.id, tool]));
 
 const dom = {};
@@ -38,25 +48,74 @@ function applyTheme() {
 }
 
 const THEME_ORDER = ['system', 'light', 'dark'];
-const THEME_LABEL = { system: 'Theme: auto', light: 'Theme: light', dark: 'Theme: dark' };
+const THEME_LABEL = { system: 'Auto', light: 'Light', dark: 'Dark' };
+// Monochrome, state-bearing glyphs: the glyph itself reports the current theme
+// and takes the palette text colour. Anything depicting an object gets an SVG.
+const THEME_GLYPH = { system: '◐', light: '☀', dark: '☾' };
 
 /* ---------------------------------------------------------------- chrome -- */
 
+/** A round icon button, drawn as a line SVG in currentColor so it follows the theme. */
+function iconSvg(paths, { size = 18 } = {}) {
+  const node = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  node.setAttribute('viewBox', '0 0 24 24');
+  node.setAttribute('width', size);
+  node.setAttribute('height', size);
+  node.setAttribute('fill', 'none');
+  node.setAttribute('stroke', 'currentColor');
+  node.setAttribute('stroke-width', '1.8');
+  node.setAttribute('stroke-linecap', 'round');
+  node.setAttribute('stroke-linejoin', 'round');
+  node.setAttribute('aria-hidden', 'true');
+  for (const d of paths) {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    node.appendChild(path);
+  }
+  return node;
+}
+
+/* A side-view cup. Never the emoji: it carries its own off-palette colours. */
+const COFFEE_PATHS = [
+  'M6.5 8 H15.5 V13 A4.5 4.5 0 0 1 6.5 13 Z',
+  'M15.5 9.5 h1.8 a2.6 2.6 0 0 1 0 5.2 h-1.8',
+  'M4 19.5 Q 11 21.8 18 19.5',
+  'M9.3 5.2 q -1.4 -1.1 0 -2.2 q 1.4 -1.1 0 -2.2',
+  'M12.7 5.2 q -1.4 -1.1 0 -2.2 q 1.4 -1.1 0 -2.2',
+];
+
 function buildHeader() {
   const themeButton = el('button', {
-    class: 'btn', type: 'button', id: 'theme-toggle',
-    title: 'System, light or dark. Set it explicitly before screen-recording.',
+    class: 'btn btn-icon', type: 'button', id: 'theme-toggle',
+    title: `Theme: ${THEME_LABEL[state.theme]} — click to change`,
+    'aria-label': `Theme: ${THEME_LABEL[state.theme]} — click to change`,
     on: {
       click: () => update((draft) => {
         draft.theme = THEME_ORDER[(THEME_ORDER.indexOf(draft.theme) + 1) % THEME_ORDER.length];
       }),
     },
-  }, dualLabel(THEME_LABEL[state.theme], '◐'));
+  }, el('span', { 'aria-hidden': 'true', text: THEME_GLYPH[state.theme] }));
   dom.themeButton = themeButton;
+
+  const coffee = el('a', {
+    class: 'btn btn-icon',
+    href: 'https://buymeacoffee.com/detronics',
+    target: '_blank',
+    rel: 'noopener noreferrer',
+    title: 'Buy me a coffee (opens in a new tab)',
+    'aria-label': 'Buy me a coffee (opens in a new tab)',
+  }, iconSvg(COFFEE_PATHS));
 
   return el('header', { class: 'app-header' }, [
     el('div', { class: 'brand' }, [
-      el('img', { class: 'brand__logo', src: 'assets/logo.png', alt: 'Detronics' }),
+      // The logo is the home link: clicking the brand goes to the site.
+      el('a', {
+        class: 'brand__home',
+        href: 'https://www.detronics.co.za/',
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        title: 'detronics.co.za (opens in a new tab)',
+      }, el('img', { class: 'brand__logo', src: 'assets/logo.png', alt: 'Detronics' })),
       el('span', { class: 'brand__sep', 'aria-hidden': 'true' }),
       el('span', { class: 'brand__tool', text: 'Gear Bench' }),
     ]),
@@ -73,23 +132,35 @@ function buildHeader() {
         class: 'btn', type: 'button', title: 'Load a saved bench',
         on: { click: () => openProject(() => render()) },
       }, dualLabel('Load project', 'Load')),
+      coffee,
       themeButton,
     ]),
   ]);
 }
 
+/*
+ * The workspace bar: what you are working on, and how much of it you want to
+ * see. The detail level belongs here rather than in the sidebar because it
+ * governs every panel below it — putting it inside one of those panels would
+ * make it look like a setting for that panel.
+ */
 function buildTabs() {
   dom.tabs = el('div', { class: 'segmented', role: 'tablist', 'aria-label': 'Tools' });
-  return dom.tabs;
+  dom.levels = el('div', { class: 'workspace-bar__levels' });
+  return el('div', { class: 'workspace-bar' }, [dom.tabs, dom.levels]);
 }
 
 function renderTabs() {
   clear(dom.tabs);
   for (const tool of TOOLS) {
+    if (TAB_GROUP_BREAK.has(tool.meta.id)) {
+      dom.tabs.appendChild(el('span', { class: 'segmented__sep', 'aria-hidden': 'true' }));
+    }
     dom.tabs.appendChild(el('button', {
       class: 'segmented__btn',
       type: 'button',
       role: 'tab',
+      'data-field': `tab-${tool.meta.id}`,
       'aria-selected': String(tool.meta.id === state.tool),
       on: { click: () => update((draft) => { draft.tool = tool.meta.id; }) },
     }, [
@@ -97,6 +168,11 @@ function renderTabs() {
       el('span', { class: 'tab-label tab-label--short', text: tool.meta.short }),
     ]));
   }
+
+  clear(dom.levels);
+  dom.levels.appendChild(levelSwitch(state.ui.level, (level) => update((draft) => {
+    draft.ui.level = level;
+  })));
 }
 
 function buildViewport() {
@@ -133,6 +209,13 @@ function buildFooter() {
             toast('Reset to the default bench');
           },
         },
+      }),
+      el('a', {
+        class: 'linkish',
+        href: 'https://buymeacoffee.com/detronics',
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        text: 'Buy me a coffee',
       }),
       el('span', { class: 'muted', text: `v${APP_VERSION}` }),
     ]),
@@ -200,6 +283,9 @@ export function render() {
   // the theme — the button, opening a project, a share link — takes effect.
   applyTheme();
   renderTabs();
+  // The guide switches the stage to a reading column; reset it so the next tool
+  // gets the drawing canvas back.
+  dom.stage.className = 'viewport__stage';
   clear(dom.stage);
   clear(dom.sidebar);
   clear(dom.readout);
@@ -207,9 +293,10 @@ export function render() {
   clear(dom.explain);
 
   if (dom.themeButton) {
-    const [long, short] = dom.themeButton.querySelectorAll('.btn-label');
-    if (long) long.textContent = THEME_LABEL[state.theme];
-    if (short) short.textContent = state.theme === 'dark' ? '●' : state.theme === 'light' ? '○' : '◐';
+    const label = `Theme: ${THEME_LABEL[state.theme]} — click to change`;
+    dom.themeButton.firstChild.textContent = THEME_GLYPH[state.theme];
+    dom.themeButton.title = label;
+    dom.themeButton.setAttribute('aria-label', label);
   }
 
   const tool = byId[state.tool] || TOOLS[0];
@@ -276,9 +363,17 @@ function init() {
   configureSections({
     get: (id) => state.ui.sections[`${state.tool}:${id}`] ?? true,
     set: (id, open) => { state.ui.sections[`${state.tool}:${id}`] = open; saveSoon(); },
+    level: () => state.ui.level,
   });
 
   dom.sidebar = el('aside', { class: 'sidebar', id: 'sidebar', 'aria-label': 'Controls' });
+
+  // Tools legitimately pass null for a section that does not apply — nothing is
+  // selected, or the section is above the current detail level. Native
+  // `append()` stringifies that null and drops the word "null" into the panel,
+  // so it is filtered once here rather than at every call site.
+  const nativeAppend = dom.sidebar.append.bind(dom.sidebar);
+  dom.sidebar.append = (...kids) => nativeAppend(...kids.filter(Boolean));
   document.body.append(
     buildHeader(),
     el('main', { class: 'app-main' }, [buildViewport(), dom.sidebar]),

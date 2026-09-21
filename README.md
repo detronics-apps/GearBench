@@ -15,6 +15,7 @@ connection or the input speed.
 | **Gear train** | Build a train gear by gear. Mesh, ring, shaft and belt links, plus planetary sets. Drag a gear to swing it round its parent; it stays in mesh. Drive, hold or re-hang any shaft from the gear list. Every speed, direction, ratio and torque, live. |
 | **Planetary set** | A sun, planets, a ring and a carrier. Choose what is held and what drives, see all six configurations at once, and check whether the set can actually be assembled. |
 | **Single gear** | One gear, fully dimensioned, with real involute flanks and a proper root fillet. Set it by module or by pitch diameter. Add a keyway, two keyways or straight-sided splines. Exports as SVG, PNG or 1:1 DXF. |
+| **How to use** | Every how-to, question and non-obvious feature, behind one search box that understands plain words rather than gear vocabulary. |
 | **Ratio solver** | State the ratio you need; get a shortlist of real tooth counts ranked by error and by how much metal you have to cut. One click drops the answer into the train designer. |
 
 Every tool carries a **"How this works"** panel explaining the concept in plain language,
@@ -74,7 +75,7 @@ runner with nothing to install:
 npm test
 ```
 
-238 cases, including the ones that matter most: the **drawn** tooth polygon is measured on
+249 cases, including the ones that matter most: the **drawn** tooth polygon is measured on
 its pitch circle and checked against the tooth thickness the formula predicts; the animation
 is checked to turn every gear at exactly the speed the solver worked out; and every mesh is
 checked to be phased tooth-against-space at several instants.
@@ -118,6 +119,7 @@ js/layout.js          where every gear sits, axial planes, collisions
 js/phase.js           tooth phasing, so the animation actually meshes
 js/ratios.js          the ratio search
 js/dxf.js             DXF R12 output
+js/guide.js           the help content, and the search that understands plain words
 js/state.js           one state object, localStorage, URL-hash sharing
 js/main.js            chrome, tool routing, rendering, the animation clock
 js/ui/                DOM helpers, SVG renderers, widgets, export

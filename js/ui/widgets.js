@@ -42,19 +42,60 @@ export function parseNumber(text) {
  * it lives in a small store the shell installs rather than being threaded
  * through every tool.
  */
-let sectionStore = { get: () => true, set: () => {} };
+let sectionStore = { get: () => true, set: () => {}, level: () => 'expert' };
 
 export function configureSections(store) {
-  sectionStore = store;
+  sectionStore = { ...sectionStore, ...store };
 }
 
-/** A titled, collapsible block in the sidebar. */
-export function section(title, children, { info = null, actions = null, key = null } = {}) {
+/*
+ * Detail levels.
+ *
+ * The same tool has to serve someone who has never seen a gear and someone
+ * tuning the model, without either getting the wrong app. A level only ever
+ * *hides*: the arithmetic is identical at every level, and switching down and
+ * back must not change a single number.
+ */
+export const LEVELS = ['simple', 'advanced', 'expert'];
+
+export const LEVEL_LABEL = {
+  simple: 'Simple',
+  advanced: 'Advanced',
+  expert: 'Expert',
+};
+
+export const LEVEL_HINT = {
+  simple: 'Just what you need for a right answer.',
+  advanced: 'The controls you reach for daily, and the numbers behind the result.',
+  expert: 'Everything, including the assumptions the model itself runs on.',
+};
+
+/** Is `need` within the level currently on? Used to gate a section or a field. */
+export const atLeast = (need) =>
+  LEVELS.indexOf(sectionStore.level()) >= LEVELS.indexOf(need || 'simple');
+
+/**
+ * A titled, collapsible block in the sidebar.
+ *
+ * `group` puts the section in an accordion: opening one closes its siblings, so
+ * a single thing is in view at a time. That is the native `<details name>`
+ * behaviour — the browser does the closing, and the `toggle` events it fires
+ * keep the remembered state honest without any of our own bookkeeping.
+ *
+ * Returns null when the section is above the current detail level, so a caller
+ * can list every section unconditionally.
+ */
+export function section(title, children, {
+  info = null, actions = null, key = null, group = null, level = null,
+} = {}) {
+  if (level && !atLeast(level)) return null;
   const id = key || title;
   return el('details', {
     class: 'section',
     open: sectionStore.get(id) ? '' : null,
+    name: group,
     'data-section': id,
+    'data-level': level,
     on: {
       // Recorded, not re-rendered: collapsing a panel is not a change to the
       // design, and rebuilding the sidebar here would fight the animation.
@@ -64,6 +105,27 @@ export function section(title, children, { info = null, actions = null, key = nu
     el('summary', { class: 'section__title' }, [title, info ? infoIcon(info) : null, actions]),
     el('div', { class: 'section__body' }, Array.isArray(children) ? children : [children]),
   ]);
+}
+
+/**
+ * The Simple / Advanced / Expert switch.
+ *
+ * Sits in the workspace bar beside the tabs, not in a panel: it governs every
+ * panel below it, and anything that governs the whole screen has to live above
+ * the whole screen. The reason for each level is in its tooltip rather than a
+ * line of prose, because the bar has to stay one row.
+ */
+export function levelSwitch(current, onChange) {
+  return el('div', {
+    class: 'chipset chipset--modes', role: 'group', 'aria-label': 'Detail level',
+  }, LEVELS.map((id) => el('button', {
+    class: 'chip', type: 'button',
+    'aria-pressed': String(id === current),
+    'data-field': `level:${id}`,
+    title: LEVEL_HINT[id],
+    text: LEVEL_LABEL[id],
+    on: { click: () => onChange(id) },
+  })));
 }
 
 /* --------------------------------------------------------------- fields -- */
@@ -267,25 +329,133 @@ export function statInput(label, value, onChange, {
 
 const BANNER_MARK = { error: '!', warn: '!', ok: '✓', info: 'i' };
 const BANNER_CLASS = { error: 'banner-danger', warn: 'banner-warn', ok: 'banner-ok', info: 'banner-info' };
+const BANNER_ORDER = { error: 0, warn: 1, ok: 2, info: 3 };
+
+/*
+ * Dismissed notifications, by content.
+ *
+ * These messages are *derived* — recomputed from the model on every render —
+ * so "closed" cannot live on the message itself; it has to be remembered
+ * against what the message says. Keyed on the text, which gives the behaviour
+ * you want for free: acknowledge a warning and it stays gone, but change the
+ * design so it says something different and it speaks up again.
+ *
+ * Deliberately in memory only. A dismissal is "I have read this", not a
+ * setting, and an error that survives a reload should get to say so once more.
+ */
+const dismissed = new Set();
+
+const bannerId = (level, text) => `${level}:${text}`;
+
+/** The × that every notification carries, whatever shape it is drawn in. */
+function closeButton(className, onClose) {
+  return el('button', {
+    class: className,
+    type: 'button',
+    'aria-label': 'Dismiss this notification',
+    title: 'Dismiss',
+    text: '×',
+    on: { click: (event) => { event.stopPropagation(); onClose(); } },
+  });
+}
 
 /**
  * Live warnings rather than validation on submit.
  *
  * A design being edited is allowed to be wrong for a moment; what it must never
- * be is silently wrong.
+ * be is silently wrong. Every one of them closes — a notification the reader
+ * cannot get rid of stops being information and becomes furniture.
  */
-export function banner(level, text) {
-  return el('div', { class: `banner ${BANNER_CLASS[level] || BANNER_CLASS.info}` }, [
-    el('span', { class: 'banner__mark', text: BANNER_MARK[level] || 'i' }),
-    el('span', { text }),
+export function banner(level, text, { dismissible = true } = {}) {
+  const node = el('div', {
+    class: `banner ${BANNER_CLASS[level] || BANNER_CLASS.info}`,
+    'data-banner': bannerId(level, text),
+  }, [
+    el('span', { class: 'banner__mark', 'aria-hidden': 'true', text: BANNER_MARK[level] || 'i' }),
+    el('span', { class: 'banner__text', text }),
+    dismissible ? closeButton('banner__x', () => {
+      dismissed.add(bannerId(level, text));
+      node.remove();
+    }) : null,
   ]);
+  return node;
 }
 
+/**
+ * Every notification for the current state, as one thing to look at.
+ *
+ * One message is a banner. **More than one is a group** — a `<details>` that
+ * folds them all away behind a single line, because several stacked banners
+ * push the actual work off the screen, and the reader wants either all of them
+ * or none. Errors sort to the top, so the folded summary always names the worst
+ * of what is inside.
+ */
 export function bannerList(problems, { emptyText = null } = {}) {
-  const order = { error: 0, warn: 1, ok: 2, info: 3 };
-  const sorted = [...problems].sort((a, b) => (order[a.level] ?? 9) - (order[b.level] ?? 9));
-  if (!sorted.length && emptyText) return [banner('ok', emptyText)];
-  return sorted.map((problem) => banner(problem.level, problem.text));
+  const sorted = [...problems].sort(
+    (a, b) => (BANNER_ORDER[a.level] ?? 9) - (BANNER_ORDER[b.level] ?? 9),
+  );
+
+  // The all-clear is a notification like any other: it goes through the same
+  // list so that closing it also makes it stay closed.
+  const all = sorted.length ? sorted
+    : (emptyText ? [{ level: 'ok', text: emptyText }] : []);
+
+  // Forget dismissals whose message is no longer being raised, so the same
+  // problem occurring again is reported again.
+  const present = new Set(all.map((p) => bannerId(p.level, p.text)));
+  for (const id of [...dismissed]) if (!present.has(id)) dismissed.delete(id);
+
+  const visible = all.filter((p) => !dismissed.has(bannerId(p.level, p.text)));
+
+  if (!visible.length) return [];
+  if (visible.length === 1) return [banner(visible[0].level, visible[0].text)];
+  return [noticeGroup(visible)];
+}
+
+/** The collapsible form, used as soon as there is more than one. */
+function noticeGroup(items) {
+  const count = el('span', { class: 'notices__count' });
+  const list = el('div', { class: 'notices__list' });
+
+  const worst = items[0].level;
+  const group = el('details', {
+    class: `notices notices--${worst}`,
+    open: (sectionStore.get('notices') ?? true) ? '' : null,
+    'data-section': 'notices',
+    on: { toggle: (event) => sectionStore.set('notices', event.target.open) },
+  }, [
+    el('summary', { class: 'notices__summary' }, [
+      el('span', { class: 'notices__label', text: 'Notifications' }),
+      count,
+    ]),
+    list,
+  ]);
+
+  const retally = () => {
+    const rows = [...list.children];
+    if (!rows.length) { group.remove(); return; }
+    const errors = rows.filter((r) => r.classList.contains('notices__item--error')).length;
+    const warns = rows.filter((r) => r.classList.contains('notices__item--warn')).length;
+    const parts = [];
+    if (errors) parts.push(`${errors} problem${errors === 1 ? '' : 's'}`);
+    if (warns) parts.push(`${warns} to check`);
+    count.textContent = parts.length ? `${rows.length} — ${parts.join(', ')}` : String(rows.length);
+  };
+
+  for (const item of items) {
+    const row = el('div', { class: `notices__item notices__item--${item.level}` }, [
+      el('span', { class: 'notices__dot', 'aria-hidden': 'true' }),
+      el('span', { class: 'notices__text', text: item.text }),
+      closeButton('notices__x', () => {
+        dismissed.add(bannerId(item.level, item.text));
+        row.remove();
+        retally();
+      }),
+    ]);
+    list.appendChild(row);
+  }
+  retally();
+  return group;
 }
 
 /* --------------------------------------------------------------- tables -- */

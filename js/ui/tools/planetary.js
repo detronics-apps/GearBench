@@ -136,7 +136,7 @@ export function render(ctx) {
       gap.ok
         ? el('p', { class: 'field__hint', text: `${fmtNum(gap.clearance, 3)} mm between neighbouring planet tips.` })
         : null,
-    ], { key: 'teeth' }),
+    ], { key: 'teeth', group: 'planetary' }),
 
     section('Which member does what', [
       chipField('Driven', MEMBERS.map((member) => ({ value: member, label: MEMBER_LABEL[member] })),
@@ -152,11 +152,11 @@ export function render(ctx) {
       }),
       numberField('Input speed', p.inputRpm, (inputRpm) => patch({ inputRpm }), { unit: 'rpm', step: rpmStep(p.inputRpm), min: -100000, max: 100000 }),
       numberField('Input torque', p.inputTorque, (inputTorque) => patch({ inputTorque }), { unit: 'N·m', min: 0, max: 100000, step: 1 }),
-    ], { key: 'members', info: 'Hold one member, drive another, and the third is the output. Which one you hold changes the ratio completely — that is the whole character of an epicyclic set.' }),
+    ], { key: 'members', group: 'planetary', info: 'Hold one member, drive another, and the third is the output. Which one you hold changes the ratio completely — that is the whole character of an epicyclic set.' }),
 
     section('Every way of driving this set', [
       configurationTable(p, zRing, patch),
-    ], { key: 'configurations', info: 'The same three gears give six different ratios depending on what is held and what is driven. Click a row to set it up.' }),
+    ], { key: 'configurations', group: 'planetary', info: 'The same three gears give six different ratios depending on what is held and what is driven. Click a row to set it up.' }),
 
     section('Torque split', [
       table(
@@ -168,7 +168,7 @@ export function render(ctx) {
         })),
       ),
       el('p', { class: 'field__hint', text: 'The three sum to zero. The casing takes whatever the held member reacts against.' }),
-    ], { key: 'torque' }),
+    ], { key: 'torque', group: 'planetary', level: 'advanced' }),
 
     section('View', [
       sliderField('Zoom', state.view.zoom, (zoom) => update((draft) => { draft.view.zoom = zoom; }), {
@@ -180,7 +180,7 @@ export function render(ctx) {
       }),
       toggleField('Pitch circles', state.view.showPitch, (value) => update((draft) => { draft.view.showPitch = value; })),
       toggleField('Labels and speeds', state.view.showLabels, (value) => update((draft) => { draft.view.showLabels = value; })),
-    ], { key: 'view' }),
+    ], { key: 'view', group: 'planetary', level: 'advanced' }),
 
     section('Export', [
       buttonRow([
@@ -195,7 +195,7 @@ export function render(ctx) {
           draft.tool = 'train';
         }), { small: true, primary: true }),
       ]),
-    ], { key: 'export' }),
+    ], { key: 'export', group: 'planetary', level: 'advanced' }),
   );
 
   /* -- teaching -------------------------------------------------------- */

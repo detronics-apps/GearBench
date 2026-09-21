@@ -12,7 +12,7 @@
 import { el, toast } from '../dom.js';
 import {
   section, numberField, sliderField, toggleField, selectField, chipField,
-  stat, statInput, bannerList, buttonRow, button, rpmStep, table,
+  stat, statInput, bannerList, buttonRow, button, rpmStep, table, atLeast,
 } from '../widgets.js';
 import { buildTrainScene } from '../gear-svg.js';
 import { explainStack } from '../explain.js';
@@ -98,7 +98,7 @@ export function render(ctx) {
   /* -- the sidebar ----------------------------------------------------- */
 
   sidebar.append(
-    presetSection(update),
+    presetSection(model, update),
     trainDefaults(model, update),
     gearListSection(model, result, selectedId, update),
     selected ? selectedSection(model, selected, result, update) : null,
@@ -192,7 +192,7 @@ function geometrySection(model, layout, selectedId, update) {
       onRowClick: (row) => update((draft) => { draft.selectedId = row._id; }),
     }),
   ], {
-    key: 'geometry',
+    key: 'geometry', group: 'train', level: 'advanced',
     info: 'Everything a build needs: where each shaft goes relative to the input, and how far apart each meshing pair sits. Click a row to select that gear.',
   });
 }
@@ -274,10 +274,21 @@ if (typeof window !== 'undefined') {
 
 /* ------------------------------------------------------------- sidebar -- */
 
-function presetSection(update) {
+/**
+ * Worked examples to start from.
+ *
+ * A chip reads as pressed while the bench still *is* that preset, so the app
+ * opening on "Simple train" says so rather than leaving every chip looking
+ * unchosen. The moment anything is edited the match breaks and no chip is
+ * pressed, which is the honest state: it is your design now, not the preset.
+ */
+function presetSection(model, update) {
+  const matches = (preset) => JSON.stringify(preset.build()) === JSON.stringify(model);
   return section('Start from', [
     el('div', { class: 'chipset' }, Object.entries(PRESETS).map(([id, preset]) => el('button', {
       class: 'chip', type: 'button', title: preset.hint, text: preset.label,
+      'data-field': `preset:${id}`,
+      'aria-pressed': String(matches(preset)),
       on: {
         click: () => update((draft) => {
           draft.train = preset.build();
@@ -286,7 +297,7 @@ function presetSection(update) {
         }),
       },
     }))),
-  ], { key: 'presets', info: 'Worked examples. Each one is a real arrangement you can then pull apart.' });
+  ], { key: 'presets', group: 'train', info: 'Worked examples. Each one is a real arrangement you can then pull apart.' });
 }
 
 function trainDefaults(model, update) {
@@ -315,7 +326,7 @@ function trainDefaults(model, update) {
     }), {
       info: 'The angle the tooth flanks push at. Steeper means a stronger tooth and fewer teeth before undercut, at the cost of more force trying to shove the shafts apart.',
     }),
-  ], { key: 'defaults' });
+  ], { key: 'defaults', group: 'train', level: 'advanced' });
 }
 
 /**
@@ -373,7 +384,7 @@ function gearListSection(model, result, selectedId, update) {
   }
 
   return section(`Gears (${model.nodes.length})`, [el('div', { class: 'node-list' }, rows)], {
-    key: 'gears',
+    key: 'gears', group: 'train',
     info: 'Drive makes that shaft the input and moves the drive off whatever had it. Hold bolts it to the casing. A planetary set has three shafts, so it gets three rows.',
   });
 }
@@ -437,7 +448,9 @@ function selectedSection(model, node, result, update) {
         min: 1, max: 8, step: 1, integer: true,
         info: 'How many planets are fitted. They share the load and cancel the side force on the bearings, but they can only be spaced evenly if (z_sun + z_ring) divides by their number.',
       }),
-      numberField('Module override', node.m ?? model.defaults.m, (m) => patch({ m }), { min: 0.1, max: 50, step: 0.25, unit: 'mm' }),
+      atLeast('expert')
+        ? numberField('Module override', node.m ?? model.defaults.m, (m) => patch({ m }), { min: 0.1, max: 50, step: 0.25, unit: 'mm' })
+        : null,
     );
   } else {
     fields.push(
@@ -445,14 +458,14 @@ function selectedSection(model, node, result, update) {
         min: 6, max: 300, step: 1, integer: true,
         info: 'Everything follows from this and the module: the diameter, the ratio, and where the next gear has to sit.',
       }),
-      numberField('Profile shift', node.x ?? 0, (x) => patch({ x }), {
+      atLeast('expert') ? numberField('Profile shift', node.x ?? 0, (x) => patch({ x }), {
         min: -1, max: 1.2, step: 0.05,
         info: 'Cuts the tooth from further out on the rack. A positive shift fattens the root of a small pinion and cures undercut; it also pushes the centres apart.',
-      }),
-      numberField('Module override', node.m ?? model.defaults.m, (m) => patch({ m }), {
+      }) : null,
+      atLeast('expert') ? numberField('Module override', node.m ?? model.defaults.m, (m) => patch({ m }), {
         min: 0.1, max: 50, step: 0.25, unit: 'mm',
         hint: 'Two gears can only mesh at the same module.',
-      }),
+      }) : null,
     );
   }
 
@@ -511,7 +524,7 @@ function selectedSection(model, node, result, update) {
     ]));
   }
 
-  return section(`Selected — ${node.name || node.id}`, fields, { key: 'selected' });
+  return section(`Selected — ${node.name || node.id}`, fields, { key: 'selected', group: 'train' });
 }
 
 function addSection(model, selectedId, update) {
@@ -548,7 +561,7 @@ function addSection(model, selectedId, update) {
         },
       }),
     ]),
-  ], { key: 'add', info: 'Every gear hangs off one already in the train, so the drawing can never show a mesh that could not exist.' });
+  ], { key: 'add', group: 'train', info: 'Every gear hangs off one already in the train, so the drawing can never show a mesh that could not exist.' });
 }
 
 function driveSection(model, list, result, selectedId, update) {
@@ -595,7 +608,7 @@ function driveSection(model, list, result, selectedId, update) {
     numberField('Input torque', model.inputTorque, (value) => update((draft) => {
       draft.train = { ...draft.train, inputTorque: value };
     }), { unit: 'N·m', min: 0, max: 100000, step: 1, key: 'input-torque' }),
-  ], { key: 'drive' });
+  ], { key: 'drive', group: 'train', level: 'advanced' });
 }
 
 function viewSection(state, update) {
@@ -612,7 +625,7 @@ function viewSection(state, update) {
       info: 'The circles that actually roll on each other. Two gears mesh when their pitch circles touch — the teeth only stop them slipping.',
     }),
     toggleField('Labels and speeds', state.view.showLabels, (value) => update((draft) => { draft.view.showLabels = value; })),
-  ], { key: 'view' });
+  ], { key: 'view', group: 'train', level: 'advanced' });
 }
 
 function exportSection(scene, model, layout, result, state) {
@@ -629,7 +642,7 @@ function exportSection(scene, model, layout, result, state) {
       class: 'field__hint',
       text: 'The DXF is the real thing: every gear at its true centre distance, in millimetres, one layer per feature.',
     }),
-  ], { key: 'export' });
+  ], { key: 'export', group: 'train', level: 'advanced' });
 }
 
 /* ------------------------------------------------------------ teaching -- */

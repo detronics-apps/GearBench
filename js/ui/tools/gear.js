@@ -6,7 +6,7 @@
 import { el } from '../dom.js';
 import {
   section, numberField, selectField, toggleField, chipField,
-  stat, bannerList, buttonRow, button, table,
+  stat, bannerList, buttonRow, button, table, atLeast,
 } from '../widgets.js';
 import { renderSingleGear } from '../gear-svg.js';
 import { explainStack } from '../explain.js';
@@ -142,24 +142,24 @@ export function render(ctx) {
         min: 6, max: 400, step: 1, integer: true,
         hint: `Undercut begins below ${fmtNum(minTeethNoUndercut(g.alphaDeg, 1), 4)} teeth at ${fmtNum(g.alphaDeg, 3)}°.`,
       }),
-      chipField('Pressure angle', [
+      atLeast('expert') ? chipField('Pressure angle', [
         { value: 14.5, label: '14.5°' }, { value: 20, label: '20°' }, { value: 25, label: '25°' },
       ], g.alphaDeg, (value) => patch({ alphaDeg: Number(value) }), {
         info: 'The angle the flanks push at. 20° is the modern standard; 14.5° is old imperial stock; 25° is stronger but noisier and pushes the shafts apart harder.',
-      }),
-      numberField('Profile shift', g.x, (x) => patch({ x }), {
+      }) : null,
+      atLeast('expert') ? numberField('Profile shift', g.x, (x) => patch({ x }), {
         min: -1, max: 1.5, step: 0.05,
         hint: `The shift that just cures undercut here is ${fmtNum(minProfileShift(g.z, g.alphaDeg, 1), 3)}.`,
         info: 'Cutting the tooth from further out on the rack. It fattens the root of a small pinion at the cost of a thinner tip, and it moves the centre distance.',
-      }),
+      }) : null,
       toggleField('Internal (ring gear)', g.internal, (internal) => patch({ internal }), {
         info: 'Teeth pointing inward. A pinion running inside a ring turns the same way as the ring, meshes more quietly, and carries more load — which is why every planetary set has one.',
       }),
-    ], { key: 'gear' }),
+    ], { key: 'gear', group: 'gear' }),
 
     boreSection(g, bore, geometry, patch),
 
-    section('Every dimension', [dimensionTable(geometry)], { key: 'dimensions' }),
+    section('Every dimension', [dimensionTable(geometry)], { key: 'dimensions', group: 'gear', level: 'advanced' }),
 
     section('Export', [
       buttonRow([
@@ -173,7 +173,7 @@ export function render(ctx) {
         class: 'field__hint',
         text: 'The DXF is 1:1 in millimetres with real involute flanks and a proper root fillet — profile, bore, pitch circle and centre marks each on their own layer.',
       }),
-    ], { key: 'export' }),
+    ], { key: 'export', group: 'gear', level: 'advanced' }),
   );
 
   /* -- teaching -------------------------------------------------------- */
@@ -310,7 +310,7 @@ function boreSection(g, bore, geometry, patch) {
   }
 
   return section('Bore and fixing', fields, {
-    key: 'bore',
+    key: 'bore', group: 'gear',
     info: 'Keys and splines are cut into the gear, so they are part of the geometry and go out in the DXF on their own layer.',
   });
 }
