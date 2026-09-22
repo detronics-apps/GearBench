@@ -229,6 +229,7 @@ function resultsTable(mode, results, onPick) {
 
 function panels(r, chosen, results) {
   const out = [{
+    level: 'simple',
     title: 'Why an exact ratio is usually not available',
     plain: [
       'A gear ratio is a fraction of two whole numbers. Most ratios anyone actually wants — 12.5, π, 60/17 — are not, or need tooth counts nobody would cut, so the honest answer is a shortlist with the error next to each entry rather than a single number.',
@@ -253,6 +254,7 @@ function panels(r, chosen, results) {
   if (r.mode !== 'planetary' && chosen) {
     const reduced = reduceRatio(chosen.stages[0].z2, chosen.stages[0].z1);
     out.push({
+      level: 'advanced',
       title: 'Hunting pairs, and why they wear better',
       plain: [
         'If the two tooth counts share a factor, the same pairs of teeth keep meeting: tooth 1 always lands on tooth 1, 11, 21 and nothing else. Any manufacturing error on one tooth is hammered into the same few partners for the life of the gearbox.',
@@ -270,6 +272,7 @@ function panels(r, chosen, results) {
 
   if (r.mode === 'compound' && chosen) {
     out.push({
+      level: 'advanced',
       title: 'Why two stages beat one',
       plain: [
         'A single pair is limited by geometry, not by arithmetic. Ten to one from a 12-tooth pinion means a 120-tooth wheel — nearly a foot across at module 2, with all the inertia and housing that implies.',

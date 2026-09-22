@@ -92,7 +92,10 @@ export function render(ctx) {
       text: `Only ${fmtMm(geometry.tipThickness, 3)} of tooth left at the tip. Under about a quarter of a module the tip will not survive hardening or a knock.`,
     });
   }
-  if (!nearestModule(g.m, 'any').standard) {
+  // Only worth saying to someone who knows what a preferred size is. At Simple
+  // the series selector is hidden and the default already sits on ISO 54
+  // series I, so there is nothing for a newcomer to act on.
+  if (atLeast('advanced') && !nearestModule(g.m, 'any').standard) {
     const snap = nearestModule(g.m, 'I');
     problems.push({
       level: 'info',
@@ -116,15 +119,26 @@ export function render(ctx) {
       numberField('Module', g.m, (m) => patch({ m }), {
         min: 0.1, max: 50, step: 0.25, unit: 'mm',
         info: 'Tooth size, in millimetres of pitch diameter per tooth. Everything scales with it and no ratio changes.',
-        hint: `${dpFromModule(g.m).toFixed(3)} diametral pitch — nearest stocked cutter is ${dp.value} DP.`,
+        hint: atLeast('advanced')
+          ? `${dpFromModule(g.m).toFixed(3)} diametral pitch — nearest stocked cutter is ${dp.value} DP.`
+          : 'Bigger module, bigger teeth. Two gears only mesh if this matches.',
       }),
-      selectField('Preferred sizes', Object.values(SERIES).map((series) => ({ value: series.id, label: series.label })),
+
+      /*
+       * Which standard the sizes come from is an Advanced question. At Simple
+       * the app just uses ISO 54 series I — the sizes cutters actually exist in
+       * — without ever naming it, because a newcomer has no way to choose
+       * between series and no reason to care.
+       */
+      atLeast('advanced') ? selectField('Preferred sizes', Object.values(SERIES).map((series) => ({ value: series.id, label: series.label })),
         g.series, (series) => patch({ series }), {
           info: 'The gear equivalent of the E-series: cutters only exist in certain sizes, so a module between them cannot be bought.',
-        }),
-      snapped.value !== g.m && Number.isFinite(snapped.value) ? buttonRow([
-        button(`Snap to ${snapped.value} mm (${fmtPct(-snapped.deviationPct, 3)})`, () => patch({ m: snapped.value }), { small: true }),
-      ]) : el('p', { class: 'field__hint', text: `${fmtNum(g.m, 4)} mm is a preferred module${snapped.series ? ` (series ${snapped.series})` : ''}.` }),
+        }) : null,
+      atLeast('advanced')
+        ? (snapped.value !== g.m && Number.isFinite(snapped.value) ? buttonRow([
+          button(`Snap to ${snapped.value} mm (${fmtPct(-snapped.deviationPct, 3)})`, () => patch({ m: snapped.value }), { small: true }),
+        ]) : el('p', { class: 'field__hint', text: `${fmtNum(g.m, 4)} mm is a preferred module${snapped.series ? ` (series ${snapped.series})` : ''}.` }))
+        : null,
 
       /*
        * Diameter and module are two views of one number, d = m·z, and people
@@ -182,6 +196,7 @@ export function render(ctx) {
 
   explainHost.append(...explainStack([
     {
+      level: 'simple',
       title: 'What the module actually is',
       plain: [
         'A gear is a circle that rolls without slipping. The circle is the pitch circle, and the teeth exist only to stop it slipping — they are not the mechanism, they are the grip.',
@@ -201,6 +216,7 @@ export function render(ctx) {
       ].join('\n'),
     },
     {
+      level: 'expert',
       title: 'Why the flank is an involute and not a circle',
       plain: [
         'Tie a string round a circle, pull it taut and unwind it. The path the end traces is an involute, and it is the shape of every modern gear tooth.',
@@ -218,6 +234,7 @@ export function render(ctx) {
       ].join('\n'),
     },
     {
+      level: 'expert',
       title: 'Undercut, and what profile shift is for',
       plain: [
         'Gears are cut by a rack that rolls past the blank. On a gear with few teeth the corner of that rack swings inside the base circle and scoops metal out of the root of the flank — undercut. The tooth ends up thin exactly where the bending stress is highest.',

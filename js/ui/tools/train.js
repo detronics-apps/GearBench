@@ -656,6 +656,7 @@ function explainPanels(model, layout, result, output) {
     const reduced = reduceRatio(firstMesh.z, parent.z);
     const external = firstMesh.link === 'mesh';
     panels.push({
+      level: 'simple',
       title: 'Why a gear pair changes speed',
       plain: [
         'Two meshing gears roll on each other without slipping, so the rim of one travels exactly as far as the rim of the other. The big one therefore turns more slowly, in proportion to how many teeth it has.',
@@ -677,6 +678,7 @@ function explainPanels(model, layout, result, output) {
   }
 
   panels.push({
+    level: 'expert',
     title: 'How the whole train is solved',
     plain: [
       'Speeds are not passed down the train one gear at a time. Every relationship is written as an equation and the whole set is solved at once.',
@@ -696,6 +698,7 @@ function explainPanels(model, layout, result, output) {
 
   if (output && Number.isFinite(output.ratio)) {
     panels.push({
+      level: 'simple',
       title: 'Speed, torque and power',
       plain: [
         'Gears do not create power, they trade speed for turning force. Whatever a shaft gives up in speed it gains in torque, in exactly the same proportion.',
@@ -723,7 +726,8 @@ function explainPanels(model, layout, result, output) {
       const gb = geometryOf(model, meshed);
       const distance = centreDistance({ m: ga.m, z1: a.z, z2: meshed.z });
       panels.push({
-        title: 'Where the gears have to sit',
+        level: 'advanced',
+      title: 'Where the gears have to sit',
         plain: [
           'The centre distance is not a choice. Two gears mesh when their pitch circles touch, so the shafts are exactly the sum of the pitch radii apart — and that follows from the module and the tooth counts alone.',
           'That is why dragging a gear in this tool swings it around its parent rather than away from it, and why the exported DXF can be cut and bolted together without further arithmetic.',
@@ -746,6 +750,7 @@ function explainPanels(model, layout, result, output) {
   if (set) {
     const spec = planetarySpec(model, set);
     panels.push({
+      level: 'advanced',
       title: 'The planetary set',
       plain: [
         'Stand on the carrier and an epicyclic set looks like an ordinary train running from the sun to the ring. That single change of viewpoint is the whole of the theory, and it gives one equation relating all three shafts.',

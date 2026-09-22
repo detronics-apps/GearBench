@@ -12,7 +12,7 @@
  *   replaces the very element being used.
  */
 
-import { el, field, infoIcon, select, chips } from './dom.js';
+import { el, field, infoIcon, select, chips, iconSvg, LOCK_CLOSED, LOCK_OPEN } from './dom.js';
 import { parseEng } from '../units.js';
 import { fmtNum } from '../format.js';
 
@@ -42,7 +42,13 @@ export function parseNumber(text) {
  * it lives in a small store the shell installs rather than being threaded
  * through every tool.
  */
-let sectionStore = { get: () => true, set: () => {}, level: () => 'expert' };
+let sectionStore = {
+  get: () => true,
+  set: () => {},
+  level: () => 'expert',
+  locked: () => false,
+  setLocked: () => {},
+};
 
 export function configureSections(store) {
   sectionStore = { ...sectionStore, ...store };
@@ -75,12 +81,30 @@ export const atLeast = (need) =>
   LEVELS.indexOf(sectionStore.level()) >= LEVELS.indexOf(need || 'simple');
 
 /**
+ * Close the other sections in a group when one is opened — unless they are
+ * locked open.
+ *
+ * This is why the accordion is not the native `<details name>` one. Native
+ * grouping always closes every sibling, with no way to exempt one, and the
+ * common real need is to pin a panel you are working against — the gear list,
+ * say — while still cycling through the rest.
+ */
+function collapseSiblings(group, exceptId) {
+  if (!group) return;
+  for (const other of document.querySelectorAll(`details.section[data-group="${group}"]`)) {
+    if (other.dataset.section === exceptId) continue;
+    if (other.dataset.locked === 'true') continue;
+    if (other.open) other.open = false;          // fires its own toggle, which records it
+  }
+}
+
+/**
  * A titled, collapsible block in the sidebar.
  *
  * `group` puts the section in an accordion: opening one closes its siblings, so
- * a single thing is in view at a time. That is the native `<details name>`
- * behaviour — the browser does the closing, and the `toggle` events it fires
- * keep the remembered state honest without any of our own bookkeeping.
+ * a single thing is in view at a time. Each section also carries a **lock**,
+ * which exempts it from that — pin the panel you are working against and cycle
+ * through the others around it.
  *
  * Returns null when the section is above the current detail level, so a caller
  * can list every section unconditionally.
@@ -90,21 +114,60 @@ export function section(title, children, {
 } = {}) {
   if (level && !atLeast(level)) return null;
   const id = key || title;
-  return el('details', {
+  const isLocked = !!sectionStore.locked(id);
+
+  const lock = el('button', {
+    class: 'section__lock',
+    type: 'button',
+    'aria-pressed': String(isLocked),
+    'data-field': `lock:${id}`,
+    title: isLocked
+      ? 'Locked open — it will stay open when you open another section'
+      : 'Lock this section open',
+    'aria-label': isLocked ? `Unlock ${title}` : `Lock ${title} open`,
+    on: {
+      click: (event) => {
+        // Inside a <summary>, so stop it reaching the fold.
+        event.preventDefault();
+        event.stopPropagation();
+        const next = node.dataset.locked !== 'true';
+        node.dataset.locked = String(next);
+        lock.setAttribute('aria-pressed', String(next));
+        lock.replaceChildren(iconSvg(next ? LOCK_CLOSED : LOCK_OPEN, { size: 14, width: 1.9 }));
+        lock.title = next
+          ? 'Locked open — it will stay open when you open another section'
+          : 'Lock this section open';
+        lock.setAttribute('aria-label', next ? `Unlock ${title}` : `Lock ${title} open`);
+        sectionStore.setLocked(id, next);
+      },
+    },
+  }, iconSvg(isLocked ? LOCK_CLOSED : LOCK_OPEN, { size: 14, width: 1.9 }));
+
+  const node = el('details', {
     class: 'section',
     open: sectionStore.get(id) ? '' : null,
-    name: group,
     'data-section': id,
+    'data-group': group,
     'data-level': level,
+    'data-locked': String(isLocked),
     on: {
       // Recorded, not re-rendered: collapsing a panel is not a change to the
       // design, and rebuilding the sidebar here would fight the animation.
-      toggle: (event) => sectionStore.set(id, event.target.open),
+      toggle: (event) => {
+        sectionStore.set(id, event.target.open);
+        if (event.target.open) collapseSiblings(group, id);
+      },
     },
   }, [
-    el('summary', { class: 'section__title' }, [title, info ? infoIcon(info) : null, actions]),
+    el('summary', { class: 'section__title' }, [
+      el('span', { class: 'section__name', text: title }),
+      info ? infoIcon(info) : null,
+      actions,
+      lock,
+    ]),
     el('div', { class: 'section__body' }, Array.isArray(children) ? children : [children]),
   ]);
+  return node;
 }
 
 /**

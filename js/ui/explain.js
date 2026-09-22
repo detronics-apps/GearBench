@@ -13,6 +13,7 @@
  */
 
 import { el } from './dom.js';
+import { atLeast } from './widgets.js';
 
 /**
  * @param {object} spec
@@ -42,6 +43,19 @@ export function explain({ title, plain, formula, worked, notes, open = false }) 
 }
 
 /** A stack of panels, the first one open. */
+/**
+ * The teaching panels for a tool, filtered to the detail level.
+ *
+ * This is where the three levels earn their keep. Simple wants the idea and the
+ * formula and nothing else — someone who has just arrived is not helped by how
+ * the solver builds its matrix. Advanced adds the working a daily user checks
+ * against. Expert is where the app explains *itself*: the equations it forms,
+ * the assumptions it makes, and why.
+ *
+ * A panel with no `level` is Simple, so leaving it off shows it to everyone —
+ * the right default for the one idea a tool is about.
+ */
 export function explainStack(specs) {
-  return specs.filter(Boolean).map((spec, i) => explain({ ...spec, open: spec.open ?? i === 0 }));
+  const visible = specs.filter(Boolean).filter((spec) => atLeast(spec.level));
+  return visible.map((spec, i) => explain({ ...spec, open: spec.open ?? i === 0 }));
 }

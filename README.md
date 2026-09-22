@@ -191,4 +191,15 @@ Where the figures are indicative rather than authoritative:
 
 ## Licence
 
-MIT.
+**MIT with the [Commons Clause](https://commonsclause.com/)** — see [LICENSE](LICENSE).
+
+Use it for anything, including commercial work. Copy it, change it, pass it on. The one right the
+Commons Clause removes is **selling the software itself** — charging for it, hosting it as a paid
+service, or building it into a product whose value is substantially this tool.
+
+**Using it for paid work is fine.** Designing gears you sell, cutting parts for a customer, putting
+the exported drawings into a job you invoice for — all fine, none of it needs permission. The
+restriction is on selling *the tool*, not on what you make with it.
+
+Note this is deliberately **not** an OSI-approved open-source licence: a no-resale condition is
+incompatible with the open-source definition.

@@ -202,6 +202,7 @@ export function render(ctx) {
 
   explainHost.append(...explainStack([
     {
+      level: 'simple',
       title: 'Why an epicyclic set behaves the way it does',
       plain: [
         'Stand on the carrier and ride round with the planets. From there the carrier is not moving, and what you see is an ordinary gear train running from the sun, through a planet acting as an idler, to the ring. That single change of viewpoint is all the theory there is.',
@@ -230,6 +231,7 @@ export function render(ctx) {
       ].join('\n'),
     },
     {
+      level: 'advanced',
       title: 'Why most tooth counts will not assemble',
       plain: [
         'Planets have to be spaced evenly, or the set is out of balance and the carrier bearings take the difference. But a planet can only be dropped in where the sun has a space and the ring has a space at the same time, and those two patterns only line up at particular angles.',
@@ -247,6 +249,7 @@ export function render(ctx) {
       ].join('\n'),
     },
     {
+      level: 'advanced',
       title: 'Torque, and why the carrier always takes the most',
       plain: [
         'A lossless gearset cannot store energy, so the three torques must balance. They divide in proportion to the teeth on the sun and the ring, and the carrier gets the sum of both — with the opposite sign, because it is holding the other two apart.',

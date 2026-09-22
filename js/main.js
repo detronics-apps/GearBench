@@ -9,10 +9,12 @@
  */
 
 import { load, save, saveSoon, state, reset } from './state.js';
-import { el, clear, toast, hideTooltip } from './ui/dom.js';
+import { el, clear, toast, hideTooltip, iconSvg } from './ui/dom.js';
 import { capDiagramScale, dualLabel } from './ui/patterns.js';
 import { configureSections, levelSwitch } from './ui/widgets.js';
 import { copyLink, saveProject, openProject, printSheet } from './ui/export.js';
+import { openModal, closeModal, docBody, quickStartBody } from './ui/modals.js';
+import { LICENCE_DOC, PRIVACY_DOC, QUICK_START } from './legal.js';
 
 import * as trainTool from './ui/tools/train.js';
 import * as planetaryTool from './ui/tools/planetary.js';
@@ -22,7 +24,7 @@ import * as guideTool from './ui/tools/guide.js';
 
 /** Bumped on every release. Read it before debugging anything: a stale cache
  *  serving yesterday's build has cost more time here than any actual bug. */
-export const APP_VERSION = '1.6.0';
+export const APP_VERSION = '1.8.0';
 
 /*
  * Tab order tells the story: build a train, then design a gear for it, then the
@@ -54,26 +56,6 @@ const THEME_LABEL = { system: 'Auto', light: 'Light', dark: 'Dark' };
 const THEME_GLYPH = { system: '◐', light: '☀', dark: '☾' };
 
 /* ---------------------------------------------------------------- chrome -- */
-
-/** A round icon button, drawn as a line SVG in currentColor so it follows the theme. */
-function iconSvg(paths, { size = 18 } = {}) {
-  const node = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  node.setAttribute('viewBox', '0 0 24 24');
-  node.setAttribute('width', size);
-  node.setAttribute('height', size);
-  node.setAttribute('fill', 'none');
-  node.setAttribute('stroke', 'currentColor');
-  node.setAttribute('stroke-width', '1.8');
-  node.setAttribute('stroke-linecap', 'round');
-  node.setAttribute('stroke-linejoin', 'round');
-  node.setAttribute('aria-hidden', 'true');
-  for (const d of paths) {
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', d);
-    node.appendChild(path);
-  }
-  return node;
-}
 
 /* A side-view cup. Never the emoji: it carries its own off-palette colours. */
 const COFFEE_PATHS = [
@@ -200,6 +182,21 @@ function buildFooter() {
         on: { click: () => printSheet() },
       }),
       el('button', {
+        class: 'btn btn-sm', type: 'button', text: 'Licence & terms',
+        title: 'What you may do with this tool, and what it does not promise',
+        on: { click: () => openModal(LICENCE_DOC.title, docBody(LICENCE_DOC)) },
+      }),
+      el('button', {
+        class: 'btn btn-sm', type: 'button', text: 'Imprint & privacy',
+        title: 'Who made it, and what happens to your data',
+        on: { click: () => openModal(PRIVACY_DOC.title, docBody(PRIVACY_DOC)) },
+      }),
+      el('button', {
+        class: 'btn btn-sm', type: 'button', text: 'Quick start',
+        title: 'What this is and the first five things to do',
+        on: { click: () => showQuickStart() },
+      }),
+      el('button', {
         class: 'btn btn-sm', type: 'button', text: 'Reset',
         title: 'Back to the default bench',
         on: {
@@ -220,6 +217,38 @@ function buildFooter() {
       el('span', { class: 'muted', text: `v${APP_VERSION}` }),
     ]),
   ]);
+}
+
+/**
+ * The quick start, which is also the first-run onboarding.
+ *
+ * Shown once, automatically, the first time the app is opened, and available
+ * from the footer forever after — the same content at two moments, so nobody
+ * has to remember what it said.
+ */
+function showQuickStart({ firstRun = false } = {}) {
+  const dismiss = el('label', { class: 'field field--toggle' }, [
+    el('input', {
+      type: 'checkbox',
+      checked: state.ui.quickStartSeen ? '' : null,
+      on: {
+        change: (event) => {
+          state.ui.quickStartSeen = event.target.checked;
+          saveSoon();
+        },
+      },
+    }),
+    el('span', { class: 'field__label field__label--inline', text: "Don't show this when I open the app" }),
+  ]);
+
+  openModal(QUICK_START.title, quickStartBody(QUICK_START, { extra: firstRun ? dismiss : null }), {
+    actions: [
+      el('button', {
+        class: 'btn btn-primary', type: 'button', text: 'Start designing',
+        on: { click: () => closeModal() },
+      }),
+    ],
+  });
 }
 
 /* ---------------------------------------------------------------- render -- */
@@ -364,6 +393,14 @@ function init() {
     get: (id) => state.ui.sections[`${state.tool}:${id}`] ?? true,
     set: (id, open) => { state.ui.sections[`${state.tool}:${id}`] = open; saveSoon(); },
     level: () => state.ui.level,
+    locked: (id) => !!state.ui.locked[`${state.tool}:${id}`],
+    setLocked: (id, value) => {
+      if (value) state.ui.locked[`${state.tool}:${id}`] = true;
+      else delete state.ui.locked[`${state.tool}:${id}`];
+      // Saved at once rather than debounced: locking is a deliberate, rare
+      // click, and it is often the last thing done before closing the tab.
+      save();
+    },
   });
 
   dom.sidebar = el('aside', { class: 'sidebar', id: 'sidebar', 'aria-label': 'Controls' });
@@ -382,6 +419,13 @@ function init() {
 
   render();
   save();
+
+  // First run: tell the app's story before anything else is asked of them.
+  if (!state.ui.quickStartSeen) {
+    state.ui.quickStartSeen = true;
+    save();
+    showQuickStart({ firstRun: true });
+  }
 
   // The share link has done its job once it has been read; leaving it in the
   // address bar means a later reload silently overrides the saved bench.

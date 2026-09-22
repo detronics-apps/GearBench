@@ -78,7 +78,16 @@ export const defaults = () => ({
   // but it has to survive a re-render or every edit would spring them all open.
   // `level` is Simple / Advanced / Expert — it only ever hides controls, never
   // changes a value, so switching down and back leaves every number alone.
-  ui: { sections: {}, level: 'simple', guideQuery: '', guideCategory: 'all' },
+  ui: {
+    sections: {},
+    // Sections locked open, keyed `tool:section`. A locked one is exempt from
+    // the accordion closing it when another section is opened.
+    locked: {},
+    level: 'simple',
+    guideQuery: '',
+    guideCategory: 'all',
+    quickStartSeen: false,
+  },
 });
 
 export const state = defaults();
@@ -150,6 +159,8 @@ export function migrate(incoming) {
       guideQuery: String(incoming.ui?.guideQuery ?? base.ui.guideQuery).slice(0, 80),
       guideCategory: typeof incoming.ui?.guideCategory === 'string'
         ? incoming.ui.guideCategory : base.ui.guideCategory,
+      locked: sectionFlags(incoming.ui?.locked),
+      quickStartSeen: bool(incoming.ui?.quickStartSeen, base.ui.quickStartSeen),
     },
   };
 }

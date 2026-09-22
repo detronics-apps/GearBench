@@ -63,6 +63,37 @@ export function clear(node) {
 
 export const $ = (selector, root = document) => root.querySelector(selector);
 
+/**
+ * A line-drawn icon in `currentColor`.
+ *
+ * The house rule: palette tokens or `currentColor` only, never a multicolour
+ * emoji. An emoji renders in its own fixed colours and will clash with the
+ * palette in one theme or both — so a padlock, a coffee cup or anything else
+ * depicting an object is drawn, not typed.  See references/brand.md.
+ */
+export function iconSvg(paths, { size = 18, width = 1.8 } = {}) {
+  const node = document.createElementNS(SVG_NS, 'svg');
+  node.setAttribute('viewBox', '0 0 24 24');
+  node.setAttribute('width', size);
+  node.setAttribute('height', size);
+  node.setAttribute('fill', 'none');
+  node.setAttribute('stroke', 'currentColor');
+  node.setAttribute('stroke-width', width);
+  node.setAttribute('stroke-linecap', 'round');
+  node.setAttribute('stroke-linejoin', 'round');
+  node.setAttribute('aria-hidden', 'true');
+  for (const d of paths) {
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', d);
+    node.appendChild(path);
+  }
+  return node;
+}
+
+/** A padlock. The open one simply leaves the shackle's return stroke off. */
+export const LOCK_CLOSED = ['M5.5 11 h13 v8.5 h-13 z', 'M8.5 11 V7.5 a3.5 3.5 0 0 1 7 0 V11'];
+export const LOCK_OPEN = ['M5.5 11 h13 v8.5 h-13 z', 'M8.5 11 V7.5 a3.5 3.5 0 0 1 7 0'];
+
 /*
  * Info tooltips.
  *

@@ -1,5 +1,60 @@
 # Changelog
 
+## 1.8.0
+
+**The teaching is levelled like the controls now.** Leaving every "How this
+works" panel on at every level meant a newcomer on Simple was handed the
+solver's matrix. Simple gets the one idea the tool is about and its formula —
+for the train, why a pair changes speed, and the trade between speed, torque
+and power. Advanced adds the working. **Expert is where the app explains
+itself**, so "How the whole train is solved", which sets out the simultaneous
+equations, only appears there: it describes the software, not gears.
+
+**Standards and jargon are out of Simple.** The single-gear tool no longer
+mentions ISO 54, diametral pitch or preferred series to a newcomer — it just
+uses ISO 54 series I, which was already the default, without naming it. The
+"module is not a preferred size" notification is suppressed too, because at
+Simple it is something the reader cannot act on.
+
+**The licence changed again, to MIT with the Commons Clause** — and this one is
+right. PolyForm Noncommercial forbade *commercial use*, which is far wider than
+intended: it would have barred a workshop from designing parts it sells. MIT
+grants everything, the Commons Clause removes exactly one right — selling the
+software itself, or charging for a service whose value is substantially this
+software. Using it for paid work is explicitly fine, and the licence modal now
+says so in its own section.
+
+## 1.7.0
+
+**The footer documents**, matching Bench-Calculator: **Licence & terms**,
+**Imprint & privacy** and **Quick start**, each a modal with three ways out —
+the ×, Escape, or the backdrop. The text lives in a pure `js/legal.js` so it can
+be tested, and one of those tests asserts that the licence the footer claims is
+the licence in the LICENSE file. That is the pair most likely to drift.
+
+**Quick start is also the first-run onboarding** — shown once automatically the
+first time the app is opened, with a "don't show this again" box, and in the
+footer forever after. Same content at two moments.
+
+**The licence changed from MIT to PolyForm Noncommercial 1.0.0**, with a LICENSE
+file added. Anyone may use, copy, modify and share the tool for any purpose that
+is not commercial; selling it, or building it into something sold, needs a
+separate licence. **The gears you design with it are unaffected** — the parts,
+the drawings and the DXFs are yours, including commercially. The restriction is
+on selling the tool.
+
+**Sidebar sections lock.** The accordion already closed the others when you
+opened one; now each section carries a padlock that exempts it, so you can pin
+the gear list and cycle through the rest around it. The lock is drawn in
+`currentColor` rather than an emoji, its click no longer folds the section it is
+in, and it saves immediately rather than through the debounced save — it is
+often the last thing you touch before closing the tab.
+
+This replaces the native `<details name>` accordion, which always closes every
+sibling and gives no way to exempt one.
+
+Added `BACKLOG.md`, opening with rack gears and hiding individual teeth.
+
 ## 1.6.0
 
 **Every notification closes now**, including the green "this train will run as
